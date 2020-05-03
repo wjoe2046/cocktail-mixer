@@ -1,5 +1,8 @@
-import React from "react";
+import React from 'react';
+import { useParams } from 'react-router-dom';
 
-export default function SingleCocktail() {
-  return <h1>single cocktail page</h1>;
-}
+export const SingleCocktail = () => {
+  const { id } = useParams();
+
+  return <h1>Single Cocktail Page: {id}</h1>;
+};

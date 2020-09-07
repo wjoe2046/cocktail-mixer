@@ -18,3 +18,5 @@ Or alternative you can
 $ docker-compose up -d --build
 
 ```
+Stop the network by
+`$ docker-compose stop`

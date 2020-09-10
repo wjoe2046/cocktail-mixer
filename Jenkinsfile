@@ -7,7 +7,15 @@ pipeline {
         dockerVersion = 'latest'
     }
     agent any
+    
+
     stages {
+        stage('Lint') {
+            steps {
+                sh 'tidy -q -e **/*.html'
+            }
+        }
+
         stage('K8S Deploy')  {
             steps {
                 withAWS(credentials: 'aws-creds', region: eksRegion) {

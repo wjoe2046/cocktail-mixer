@@ -16,6 +16,17 @@ pipeline {
             }
         }
 
+        stage('Docker build') {
+            steps {
+                script {
+                    dockerImage = docker.build('${dockerHub}/${dockerImage}:${dockerVersion}')
+                    docker.withRegistry('', 'docker-hub-creds') {
+                        dockerImage.push()
+                    }
+                }
+            }
+        }
+
         stage('K8S Deploy')  {
             steps {
                 withAWS(credentials: 'aws-creds', region: eksRegion) {

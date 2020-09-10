@@ -11,15 +11,6 @@ pipeline {
   }
   
   stages {
-
-    stage('Linting') {
-      steps {
-        parallel(
-          hadolint: {sh 'hadolint Dockerfile'}
-        )
-      }
-    }
-
     stage('Build Docker Image') {
       steps {
         sh 'docker build -t $APP_NAME .'

@@ -1,0 +1,47 @@
+    stage('Create ECR repository') {
+      steps {
+        sh 'aws cloudformation deploy --stack-name cocktail-db-repo --region us-west-2 --template-file cfn-ecr.yml --parameter-overrides RepositoryName=$APP_NAME'
+      }
+    }
+
+    stage('Push image to ECR') {
+      steps {
+        sh 'docker tag $APP_NAME $AWS_ACCOUNT.dkr.ecr.us-west-2.amazonaws.com/$APP_NAME:$BUILD_NUMBER'
+        sh 'docker push $AWS_ACCOUNT.dkr.ecr.us-west-2.amazonaws.com/$APP_NAME:$BUILD_NUMBER'
+        sh 'docker tag $APP_NAME $AWS_ACCOUNT.dkr.ecr.us-west-2.amazonaws.com/$APP_NAME:latest'
+        sh 'docker push $AWS_ACCOUNT.dkr.ecr.us-west-2.amazonaws.com/$APP_NAME:latest'        
+      }
+      post {
+        always {
+          sh 'docker image rm -f $AWS_ACCOUNT.dkr.ecr.us-west-2.amazonaws.com/$APP_NAME:$BUILD_NUMBER'
+          sh 'docker image rm -f $AWS_ACCOUNT.dkr.ecr.us-west-2.amazonaws.com/$APP_NAME:latest'
+          sh 'docker image rm -f $APP_NAME:latest'
+        }
+      }
+    }
+
+    stage('Deploy to EKS') {
+      environment {
+        EKS_STATUS = sh (script:'eksctl get cluster --name=basic-cluster --region=us-west-2', returnStatus: true)
+      }
+      when {
+        expression {environment name: 'EKS_STATUS', value: '0'}
+      }
+      steps {
+        echo "Deploying to EKS cluster ..."
+
+        sh 'kubectl apply -f app-deployment-aws.yml'
+        sh 'kubectl rollout status deployment.apps/cocktail-db-app --timeout=5m --watch=true'
+
+        script {
+          K8S_SVC = sh (
+            script: "kubectl get services | grep cocktail-db-app | awk '{print \$4}'",
+            returnStdout: true
+          ).trim()
+                
+          echo "Kubernetes service URL: ${K8S_SVC}"
+          sleep 5
+          sh "curl -m 5 -S http://$K8S_SVC"
+        }
+      }
+    }

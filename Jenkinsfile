@@ -1,6 +1,6 @@
 pipeline {
     environment {
-        eksClusterName = 'cocktail'
+        eksClusterName = 'cocktail-cluster'
         eksRegion = 'us-west-2'
         dockerHub = 'wjoe2046'
         dockerImage = 'cocktail_db_cocktail'
